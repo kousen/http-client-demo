@@ -1,5 +1,8 @@
 package astro;
 
+import astro.json.AstroResponse;
+import com.google.gson.Gson;
+
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -14,6 +17,8 @@ public class AstroClient {
                                           .connectTimeout(Duration.ofSeconds(2))
                                           .build();
 
+    private Gson gson = new Gson();
+
     private HttpRequest buildRequest() {
         String astroUrl = "http://api.open-notify.org/astros.json";
         return HttpRequest.newBuilder()
@@ -22,19 +27,24 @@ public class AstroClient {
                           .build();
     }
 
-    public String getSync() throws IOException, InterruptedException {
+    public AstroResponse getSync() throws IOException, InterruptedException {
         HttpResponse<String> response = client.send(
                 buildRequest(),
                 HttpResponse.BodyHandlers.ofString());
-        return response.body();
+        return getResponse(response.body());
     }
 
 
-    public String getAsync() throws ExecutionException, InterruptedException {
-        return client.sendAsync(buildRequest(),
+    public AstroResponse getAsync() throws ExecutionException, InterruptedException {
+        String json = client.sendAsync(buildRequest(),
                                 HttpResponse.BodyHandlers.ofString())
                      .thenApply(HttpResponse::body)
                      .get();
+        return getResponse(json);
     }
 
+
+    private AstroResponse getResponse(String json) {
+        return gson.fromJson(json, AstroResponse.class);
+    }
 }
